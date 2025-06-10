@@ -45,7 +45,7 @@ local: ## Make local environment editable
 	uv pip install --editable . 
 
 run: local ## Run main script
-	uv run main.py
+	source .venv/bin/activate && python3 main.py
 
 dist: clean # Create wheels/tar.gz distribution files
 	uv build
@@ -60,3 +60,4 @@ activate: ## Activating the virtual environment. Run `make venv` before activati
 
 bump-dry: ## Bump up the patch version (dry-run)
 	bump-my-version bump patch --dry-run -v
+

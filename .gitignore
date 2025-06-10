@@ -14,3 +14,6 @@ venv
 
 # Misc
 .DS_Store
+freqs/
+output/
+Excel/

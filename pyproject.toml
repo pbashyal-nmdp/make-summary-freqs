@@ -1,30 +1,41 @@
 [project]
-name = "nmdp-python-script-template"
+name = "make-summary-freqs"
 version = "0.0.1"
 description = "Add your description here"
 authors = [{ name = "NMDP Bioinformatics", email = "bioinformatics@nmdp.org" }]
 readme = "README.md"
 requires-python = ">=3.13"
-license = "Unlicensed" # or "LGPL-3.0-or-later" for OSS
-dependencies = []
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pandas>=2.2.3",
+    "pyarrow>=20.0.0",
+]
 classifiers = [
     # How mature is this project? Common values are
     #   3 - Alpha
     #   4 - Beta
     #   5 - Production/Stable
     "Development Status :: 3 - Alpha",
-
     # Indicate who your project is intended for
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Build Tools",
-
     # Specify the Python versions you support here.
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
 
+[project.scripts]
+make-freqs = "main:main"
+
 [dependency-groups]
 dev = ["pre-commit>=4.2.0", "ruff>=0.11.11"]
+
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["main"]
 
 [tool.ruff.lint]
 select = [
@@ -41,10 +52,10 @@ select = [
     # isort
     "I",
 ]
-
-[tool.bumpversion]
-current_version = "0.0.1"
-commit = true
-
-[[tool.bumpversion.files]]
-filename = "main.py"
+#
+#[tool.bumpversion]
+#current_version = "0.0.1"
+#commit = true
+#
+#[[tool.bumpversion.files]]
+#filename = "main.py"
