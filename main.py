@@ -37,7 +37,6 @@ pops = [
     "VIET",
 ]
 
-
 loci_combinations = [
     "A",
     "C",
@@ -55,15 +54,15 @@ loci_combinations = [
     "C~B~DRB1~DQB1",
     "A~C~B~DRB1~DQB1",
     "A~C~B~DRBX~DRB1~DQB1",
-    "DPB1~DPA1",
+    "DPA1~DPB1",
     "DQA1~DQB1",
     "DRB1~DQB1",
     "DRBX~DRB1",
     "DRBX~DQB1",
     "DRBX~DRB1~DQA1~DQB1",
     "A~C~B~DRBX~DRB1~DQB1~DPB1",
-    "DRBX~DRB1~DQA1~DQB1~DPB1~DPA1",
-    "A~C~B~DRBX~DRB1~DQA1~DQB1~DPB1~DPA1",
+    "DRBX~DRB1~DQA1~DQB1~DPA1~DPB1",
+    "A~C~B~DRBX~DRB1~DQA1~DQB1~DPA1~DPB1",
 ]
 
 
@@ -130,8 +129,8 @@ def generate_excel_names(loci_set):
     return filename, sheet_name
 
 
-def get_output_dir():
-    output_dir = Path("./Excel")
+def get_output_dir(dirname):
+    output_dir = Path(dirname)
     if not output_dir.exists():
         output_dir.mkdir()
     return output_dir
@@ -139,12 +138,12 @@ def get_output_dir():
 
 def save_to_excel(final_df, filename, sheet_name):
     # Save to an Excel File
-    file_path = get_output_dir() / filename
+    file_path = get_output_dir("excel") / filename
     print("Frequencies: Saving to file:", file_path)
     final_df.to_excel(file_path, index=False, sheet_name=sheet_name)
 
 
-def create_loci_combo_freq_file(final_df, loci_combo):
+def create_loci_combo_freqs(final_df, loci_combo):
     loci_columns = loci_combo.split("~")
     loci_combo_df = (
         final_df.groupby(loci_columns)[pops + ["TotalFreq"]].sum().reset_index()
@@ -162,9 +161,7 @@ def create_loci_combo_freq_file(final_df, loci_combo):
         loci_combo_df = loci_combo_df.drop(loci_columns, axis=1)
 
     print(loci_combo_df.head())
-    filename, sheet_name = generate_excel_names(loci_combo)
-    save_to_excel(loci_combo_df, filename, sheet_name)
-    save_summary(loci_combo_df, loci_combo)
+    return loci_combo_df
 
 
 def save_summary(df, loci_combo):
@@ -174,7 +171,7 @@ def save_summary(df, loci_combo):
     print(summary)
 
     filename = f"{loci_combo}-summary.xlsx"
-    file_path = get_output_dir() / filename
+    file_path = get_output_dir("excel") / filename
     print("Summary: Saving to file:", file_path)
     summary.to_excel(file_path)
 
@@ -187,18 +184,16 @@ def create_full_locus_all_pops_df(freqs_dir):
     return final_df
 
 
-def make_freqs(freqs_dir):
+def make_freqs(freqs_dir, file_format):
     print("Hello from nmdp-bioinformatics!")
 
     loci_set = determine_loci_order()
 
-    # full_locus_freqs_df = create_full_locus_all_pops_df(freqs_dir)
-    # # Save the 9-locus combined as a parquet file
-    # full_locus_freqs_df.to_parquet(f"{loci_set}-haplotype.parquet", index=False)
+    full_locus_freqs_df = create_full_locus_all_pops_df(freqs_dir)
+    # Save the 9-locus combined as a parquet file
+    full_locus_freqs_df.to_parquet(f"{loci_set}-haplotype.parquet", index=False)
 
-    full_locus_freqs_df = pd.read_parquet(
-        "A~C~B~DRBX~DRB1~DQA1~DQB1~DPA1~DPB1-haplotype.parquet"
-    )
+    full_locus_freqs_df = pd.read_parquet(f"{loci_set}-haplotype.parquet")
 
     full_locus_freqs_df[loci_set.split("~")] = full_locus_freqs_df[
         "Haplotype"
@@ -208,14 +203,41 @@ def make_freqs(freqs_dir):
     # For all locus combo, generate Excel files
     for i, loci_combo in enumerate(loci_combinations, start=1):
         start_time = time.perf_counter()
+
         print(f"{i}/{len(loci_combinations)}:", loci_combo, "=>", loci_combo.split("~"))
-        create_loci_combo_freq_file(full_locus_freqs_df, loci_combo)
+
+        loci_combo_df = create_loci_combo_freqs(full_locus_freqs_df, loci_combo)
+
+        if file_format == "excel":
+            generate_excel_file(loci_combo, loci_combo_df)
+        elif file_format == "csv":
+            generate_csv_file(loci_combo, loci_combo_df)
+        elif file_format == "all":
+            generate_excel_file(loci_combo, loci_combo_df)
+            generate_csv_file(loci_combo, loci_combo_df)
+
+        save_summary(loci_combo_df, loci_combo)
+
         end_time = time.perf_counter()
         elapsed_time = end_time - start_time
 
         # Format the elapsed time
         formatted_time = str(timedelta(seconds=elapsed_time))
         print(f"Time to process {loci_combo}: {formatted_time}")
+
+
+def generate_csv_file(loci_combo, loci_combo_df):
+    filename = f"{loci_combo}.csv.gz"
+    file_path = get_output_dir("csv") / filename
+    print("CSV: Saving to file:", file_path)
+    loci_combo_df.to_csv(file_path, index=False, compression="gzip")
+
+
+def generate_excel_file(loci_combo, loci_combo_df):
+    filename, sheet_name = generate_excel_names(loci_combo)
+    save_to_excel(loci_combo_df, f"Total-{filename}", sheet_name)
+    loci_combo_df.drop("TotalFreq")
+    save_to_excel(loci_combo_df, filename, sheet_name)
 
 
 def main():
@@ -227,8 +249,14 @@ def main():
         description="Make frequency Files",
     )
     parser.add_argument("-d", "--freqs-dir", default="./freqs")
+    parser.add_argument("-f", "--format", default="excel")
     args = parser.parse_args()
-    make_freqs(args.freqs_dir)
+
+    file_format = args.format.lower()
+    if file_format not in ("all", "excel", "csv"):
+        print(f"{file_format} format not yet supported")
+
+    make_freqs(args.freqs_dir, file_format)
 
 
 if __name__ == "__main__":
