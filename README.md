@@ -1,11 +1,7 @@
-# Project Template for Python Scripts
+# Make Summary Excel Files from Frequency Files
 
-## How to use the template:
 
-Create a template by clicking on the "Use this template" button and select "Create a new repository"
-   This will create a new repository with the given name e.g. `urban-potato`.
-
-## Clone and Run the template
+## Clone and Run the project
 
 1. Clone the repository locally
     ```shell
